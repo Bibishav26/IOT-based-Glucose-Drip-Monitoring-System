@@ -29,7 +29,7 @@ logic used on the real hardware, and shows:
 
 ## Firmware (ESP32)
 
- - <a href="firmware/glucose_drip_monitor.ino">`firmware/glucose_drip_monitor.ino` is the real hardware code:
+ - <a href="firmware/glucose_drip_monitor.inoglucose_drip_monitor.ino">`firmware/glucose_drip_monitor.ino` <a/> is the real hardware code:
 
 - IR drop-counter sensor → measures drops/min via interrupt
 - Ultrasonic sensor → measures chamber/bag liquid level
