@@ -17,7 +17,7 @@ glucose-drip-monitor/
 
 ## Live Prototype
 
-Open `prototype/index.html` in any browser (no install needed). It simulates
+Open - <a href="http://127.0.0.1:5500/index.html">`prototype/index.html`<a/> in any browser (no install needed). It simulates
 the IR drop-counter and ultrasonic level sensor feeding into the same alert
 logic used on the real hardware, and shows:
 
@@ -29,7 +29,7 @@ logic used on the real hardware, and shows:
 
 ## Firmware (ESP32)
 
-`firmware/glucose_drip_monitor.ino` is the real hardware code:
+ - <a href="firmware/glucose_drip_monitor.ino">`firmware/glucose_drip_monitor.ino` is the real hardware code:
 
 - IR drop-counter sensor → measures drops/min via interrupt
 - Ultrasonic sensor → measures chamber/bag liquid level
