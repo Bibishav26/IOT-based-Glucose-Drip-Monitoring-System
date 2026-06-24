@@ -17,8 +17,8 @@ glucose-drip-monitor/
 
 ## Live Prototype
 
-Open - <a href="http://127.0.0.1:5500/index.html">`prototype/index.html`<a/> in any browser (no install needed). It simulates
-the IR drop-counter and ultrasonic level sensor feeding into the same alert
+Open - <a href="http://127.0.0.1:5500/index.html">`prototype/index.html`<a/> 
+in any browser (no install needed). It simulates the IR drop-counter and ultrasonic level sensor feeding into the same alert
 logic used on the real hardware, and shows:
 
 - Live flow rate, chamber level, and time-since-last-drop readings
