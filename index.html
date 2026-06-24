@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Glucose Drip Monitor — Live Prototype</title>
+<style>
+  :root{
+    --bg: #0b1320;
+    --panel: #121d30;
+    --panel-2: #0f1828;
+    --line: #1f2d45;
+    --text: #e8edf6;
+    --muted: #7c8aa6;
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --accent: #5b9dff;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height:100vh;
+  }
+  header{
+    padding:20px 28px; border-bottom:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+  }
+  header h1{margin:0; font-size:18px; font-weight:600; letter-spacing:0.2px;}
+  header .sub{color:var(--muted); font-size:12.5px; margin-top:2px;}
+  .clock{font-family:var(--mono); color:var(--muted); font-size:13px;}
+
+  .wrap{padding:24px 28px; max-width:1100px; margin:0 auto;}
+
+  .status-banner{
+    border-radius:10px; padding:16px 20px; margin-bottom:22px;
+    display:flex; align-items:center; gap:14px;
+    border:1px solid var(--line); background:var(--panel);
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .status-banner.normal{border-color:rgba(52,211,153,0.4); background:rgba(52,211,153,0.07);}
+  .status-banner.warn{border-color:rgba(251,191,36,0.5); background:rgba(251,191,36,0.08);}
+  .status-banner.danger{border-color:rgba(248,113,113,0.55); background:rgba(248,113,113,0.10); animation:pulse 1s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(248,113,113,0.35);}70%{box-shadow:0 0 0 10px rgba(248,113,113,0);}100%{box-shadow:0 0 0 0 rgba(248,113,113,0);}}
+
+  .dot{width:12px; height:12px; border-radius:50%; flex-shrink:0;}
+  .dot.normal{background:var(--ok);}
+  .dot.warn{background:var(--warn);}
+  .dot.danger{background:var(--danger);}
+
+  .status-banner .label{font-size:15px; font-weight:600;}
+  .status-banner .detail{font-size:12.5px; color:var(--muted); margin-top:2px;}
+
+  .grid{display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-bottom:22px;}
+  @media (max-width:760px){.grid{grid-template-columns:1fr;}}
+
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:18px 18px;
+  }
+  .card .k{font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:8px;}
+  .card .v{font-family:var(--mono); font-size:26px; font-weight:600;}
+  .card .v small{font-size:13px; color:var(--muted); font-weight:400;}
+  .bar{height:6px; border-radius:3px; background:var(--panel-2); margin-top:10px; overflow:hidden;}
+  .bar > div{height:100%; border-radius:3px; transition:width 0.3s, background 0.3s;}
+
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin-bottom:18px;}
+  .panel h2{font-size:13.5px; margin:0 0 12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px;}
+
+  .controls{display:flex; gap:10px; flex-wrap:wrap;}
+  button{
+    background:var(--panel-2); color:var(--text); border:1px solid var(--line);
+    padding:9px 14px; border-radius:7px; font-size:12.5px; cursor:pointer; transition:border-color 0.2s, background 0.2s;
+  }
+  button:hover{border-color:var(--accent); background:#15233a;}
+  button.active{border-color:var(--accent); background:rgba(91,157,255,0.12); color:var(--accent);}
+
+  .log{font-family:var(--mono); font-size:12.5px; max-height:220px; overflow-y:auto;}
+  .log-row{display:flex; gap:10px; padding:6px 0; border-bottom:1px solid var(--line);}
+  .log-row:last-child{border-bottom:none;}
+  .log-row .t{color:var(--muted); flex-shrink:0;}
+  .log-row .m{flex:1;}
+  .log-row.normal .m{color:var(--ok);}
+  .log-row.warn .m{color:var(--warn);}
+  .log-row.danger .m{color:var(--danger);}
+
+  .staff-feed{display:flex; flex-direction:column; gap:10px;}
+  .staff-card{
+    border:1px solid var(--line); border-radius:8px; padding:12px 14px;
+    background:var(--panel-2); display:flex; gap:12px; align-items:flex-start;
+    animation: slideIn 0.25s ease-out;
+  }
+  @keyframes slideIn{from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:translateY(0);}}
+  .staff-card .icon{font-size:18px; line-height:1.2;}
+  .staff-card .body .title{font-weight:600; font-size:13px;}
+  .staff-card .body .desc{font-size:12px; color:var(--muted); margin-top:2px;}
+  .staff-card .body .time{font-size:11px; color:var(--muted); margin-top:4px; font-family:var(--mono);}
+  .empty{color:var(--muted); font-size:12.5px; padding:10px 0;}
+
+  footer{padding:18px 28px; color:var(--muted); font-size:11.5px; text-align:center;}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>IoT Glucose Drip Monitoring System</h1>
+    <div class="sub">Live prototype — simulated sensor feed &amp; staff alert system</div>
+  </div>
+  <div class="clock" id="clock">--:--:--</div>
+</header>
+
+<div class="wrap">
+
+  <div class="status-banner normal" id="banner">
+    <div class="dot normal" id="bannerDot"></div>
+    <div>
+      <div class="label" id="bannerLabel">System Normal</div>
+      <div class="detail" id="bannerDetail">Drip flow within safe range. No action needed.</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="k">Flow Rate</div>
+      <div class="v" id="flowVal">0.0 <small>drops/min</small></div>
+      <div class="bar"><div id="flowBar" style="width:50%; background:var(--ok);"></div></div>
+    </div>
+    <div class="card">
+      <div class="k">Drip Chamber Level</div>
+      <div class="v" id="levelVal">— <small>cm to liquid</small></div>
+      <div class="bar"><div id="levelBar" style="width:50%; background:var(--ok);"></div></div>
+    </div>
+    <div class="card">
+      <div class="k">Time Since Last Drop</div>
+      <div class="v" id="lastDropVal">0.0 <small>sec</small></div>
+      <div class="bar"><div id="dropBar" style="width:5%; background:var(--ok);"></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Simulate a Scenario</h2>
+    <div class="controls">
+      <button class="active" data-scenario="normal">Normal Flow</button>
+      <button data-scenario="slow">Flow Too Slow</button>
+      <button data-scenario="fast">Flow Too Fast</button>
+      <button data-scenario="stopped">Line Blocked / Stopped</button>
+      <button data-scenario="overflow">Overflow Risk</button>
+      <button data-scenario="backflow">Backflow Risk (Empty Bag)</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Medical Staff Notification Feed</h2>
+    <div class="staff-feed" id="staffFeed">
+      <div class="empty">No alerts sent yet. Notifications will appear here the moment an anomaly is detected.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Sensor / System Log</h2>
+    <div class="log" id="log"></div>
+  </div>
+
+</div>
+
+<footer>Prototype simulates ESP32 firmware logic (flow rate, ultrasonic level, alert thresholds) — see firmware/glucose_drip_monitor.ino for the real hardware code.</footer>
+
+<script>
+(function(){
+  const flowVal = document.getElementById('flowVal');
+  const flowBar = document.getElementById('flowBar');
+  const levelVal = document.getElementById('levelVal');
+  const levelBar = document.getElementById('levelBar');
+  const lastDropVal = document.getElementById('lastDropVal');
+  const dropBar = document.getElementById('dropBar');
+  const banner = document.getElementById('banner');
+  const bannerDot = document.getElementById('bannerDot');
+  const bannerLabel = document.getElementById('bannerLabel');
+  const bannerDetail = document.getElementById('bannerDetail');
+  const log = document.getElementById('log');
+  const staffFeed = document.getElementById('staffFeed');
+  const clock = document.getElementById('clock');
+  const buttons = document.querySelectorAll('button[data-scenario]');
+
+  let scenario = 'normal';
+  let dropsPerMin = 30;
+  let levelCm = 12;
+  let secondsSinceDrop = 0;
+  let lastNotifiedState = null;
+  let lastNotifyTime = 0;
+  let alarmAudioCtx = null;
+  let alarmOscillator = null;
+  let staffFeedHasContent = false;
+
+  const targets = {
+    normal:   { drops: 30,  level: 12,  noDrop: false },
+    slow:     { drops: 5,   level: 12,  noDrop: false },
+    fast:     { drops: 90,  level: 12,  noDrop: false },
+    stopped:  { drops: 0,   level: 12,  noDrop: true  },
+    overflow: { drops: 30,  level: 2,   noDrop: false },
+    backflow: { drops: 0,   level: 22,  noDrop: true  },
+  };
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      scenario = btn.dataset.scenario;
+      if (scenario !== 'stopped' && scenario !== 'backflow') secondsSinceDrop = 0;
+      addLog('Scenario set to: ' + btn.textContent, 'normal');
+    });
+  });
+
+  function evaluateState(drops, level, noDropSeconds) {
+    if (level <= 4) return 'overflow';
+    if (noDropSeconds > 8) {
+      if (level >= 20) return 'backflow';
+      return 'stopped';
+    }
+    if (drops > 0) {
+      if (drops < 10) return 'slow';
+      if (drops > 60) return 'fast';
+    }
+    return 'normal';
+  }
+
+  const stateInfo = {
+    normal:   { severity:'normal', label:'System Normal', detail:'Drip flow within safe range. No action needed.' },
+    slow:     { severity:'warn',   label:'Flow Rate Too Slow', detail:'Drip rate below safe threshold. Patient may be under-infused.' },
+    fast:     { severity:'warn',   label:'Flow Rate Too Fast', detail:'Drip rate above safe threshold. Risk of over-infusion.' },
+    stopped:  { severity:'danger', label:'Flow Stopped — Line Possibly Blocked', detail:'No drops detected. Check IV line for blockage immediately.' },
+    overflow: { severity:'danger', label:'Overflow Risk', detail:'Chamber liquid level critically high. Risk of spill / overflow.' },
+    backflow: { severity:'danger', label:'Backflow Risk — Bag Empty', detail:'No flow and bag near empty. Risk of air entry / backflow into line.' },
+  };
+
+  function addLog(message, severity) {
+    const row = document.createElement('div');
+    row.className = 'log-row ' + severity;
+    const time = new Date().toLocaleTimeString();
+    row.innerHTML = '<span class="t">' + time + '</span><span class="m">' + message + '</span>';
+    log.prepend(row);
+    while (log.children.length > 60) log.removeChild(log.lastChild);
+  }
+
+  function notifyStaff(state) {
+    if (staffFeedHasContent === false) {
+      staffFeed.innerHTML = '';
+      staffFeedHasContent = true;
+    }
+    const info = stateInfo[state];
+    const icon = info.severity === 'danger' ? '🚨' : info.severity === 'warn' ? '⚠️' : '✅';
+    const card = document.createElement('div');
+    card.className = 'staff-card';
+    card.innerHTML = `
+      <div class="icon">${icon}</div>
+      <div class="body">
+        <div class="title">${info.label}</div>
+        <div class="desc">${info.detail} Flow: ${dropsPerMin.toFixed(1)} drops/min.</div>
+        <div class="time">Sent to on-duty nurse station · ${new Date().toLocaleTimeString()}</div>
+      </div>
+    `;
+    staffFeed.prepend(card);
+    while (staffFeed.children.length > 8) staffFeed.removeChild(staffFeed.lastChild);
+    addLog('Notification dispatched to medical staff: ' + info.label, info.severity);
+  }
+
+  function playAlarm(on) {
+    if (on) {
+      if (!alarmAudioCtx) alarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!alarmOscillator) {
+        alarmOscillator = alarmAudioCtx.createOscillator();
+        const gain = alarmAudioCtx.createGain();
+        gain.gain.value = 0.04;
+        alarmOscillator.type = 'square';
+        alarmOscillator.frequency.value = 880;
+        alarmOscillator.connect(gain);
+        gain.connect(alarmAudioCtx.destination);
+        alarmOscillator.start();
+      }
+    } else if (alarmOscillator) {
+      alarmOscillator.stop();
+      alarmOscillator.disconnect();
+      alarmOscillator = null;
+    }
+  }
+
+  function lerp(current, target, rate) {
+    return current + (target - current) * rate;
+  }
+
+  function tick() {
+    clock.textContent = new Date().toLocaleTimeString();
+
+    const t = targets[scenario];
+    dropsPerMin = lerp(dropsPerMin, t.drops, 0.15) + (Math.random() - 0.5) * 1.5;
+    if (dropsPerMin < 0) dropsPerMin = 0;
+    levelCm = lerp(levelCm, t.level, 0.15) + (Math.random() - 0.5) * 0.3;
+
+    if (t.noDrop) {
+      secondsSinceDrop += 0.5;
+    } else {
+      secondsSinceDrop = Math.random() < 0.6 ? 0 : secondsSinceDrop + 0.5;
+    }
+
+    const state = evaluateState(dropsPerMin, levelCm, secondsSinceDrop);
+    const info = stateInfo[state];
+
+    // Update banner
+    banner.className = 'status-banner ' + info.severity;
+    bannerDot.className = 'dot ' + info.severity;
+    bannerLabel.textContent = info.label;
+    bannerDetail.textContent = info.detail;
+
+    // Update cards
+    flowVal.innerHTML = dropsPerMin.toFixed(1) + ' <small>drops/min</small>';
+    let flowPct = Math.min(100, (dropsPerMin / 100) * 100);
+    flowBar.style.width = flowPct + '%';
+    flowBar.style.background = state === 'slow' || state === 'fast' ? 'var(--warn)' : 'var(--ok)';
+
+    levelVal.innerHTML = levelCm.toFixed(1) + ' <small>cm to liquid</small>';
+    let levelPct = Math.max(0, Math.min(100, 100 - (levelCm / 25) * 100));
+    levelBar.style.width = levelPct + '%';
+    levelBar.style.background = state === 'overflow' ? 'var(--danger)' : state === 'backflow' ? 'var(--warn)' : 'var(--ok)';
+
+    lastDropVal.innerHTML = secondsSinceDrop.toFixed(1) + ' <small>sec</small>';
+    let dropPct = Math.min(100, (secondsSinceDrop / 15) * 100);
+    dropBar.style.width = dropPct + '%';
+    dropBar.style.background = secondsSinceDrop > 8 ? 'var(--danger)' : 'var(--ok)';
+
+    // Local alarm
+    playAlarm(info.severity === 'danger');
+
+    // Staff notification logic: on state change, or cooldown re-notify for ongoing danger
+    const now = Date.now();
+    if (state !== 'normal') {
+      const stateChanged = state !== lastNotifiedState;
+      const cooldownPassed = now - lastNotifyTime > 20000; // 20s demo cooldown
+      if (stateChanged || cooldownPassed) {
+        notifyStaff(state);
+        lastNotifiedState = state;
+        lastNotifyTime = now;
+      }
+    } else {
+      lastNotifiedState = 'normal';
+    }
+  }
+
+  setInterval(tick, 500);
+  tick();
+})();
+</script>
+
+</body>
+</html>
