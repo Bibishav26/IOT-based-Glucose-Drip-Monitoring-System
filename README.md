@@ -56,3 +56,11 @@ logic used on the real hardware, and shows:
 | Backflow risk | No flow + bag near empty | Critical |
 
 Thresholds are configurable constants at the top of each file.
+
+## Prototype
+<img width="1125" height="699" alt="Screenshot 1 (147)" src="https://github.com/user-attachments/assets/4ceecb9d-114e-4ad4-829b-93d7037d0eec" />
+<br><br><br><br>
+<img width="1023" height="831" alt="Screenshot 2 (145)" src="https://github.com/user-attachments/assets/f6fbc998-f42a-4f2d-8017-6939596f4b86" />
+<br><br><br><br>
+<img width="872" height="888" alt="Screenshot 3 (146)" src="https://github.com/user-attachments/assets/9238527f-e986-4f40-adc2-89e204d30d26" />
+
